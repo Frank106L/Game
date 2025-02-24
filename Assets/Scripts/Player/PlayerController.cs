@@ -26,6 +26,9 @@ public class PlayerController : MonoBehaviour
     
     private Vector2 originalOffset;
     private Vector2 OriginalSize;
+    [Header("物理材质")]
+    public PhysicsMaterial2D normal;
+    public PhysicsMaterial2D wall;
 
     public float hurtForce;
     [Header("状态")]
@@ -73,11 +76,13 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Update() {
+        
         inputDirection = inputControl.Gameplay.Move.ReadValue<Vector2>();
+        CheckState();
     }
 
     private void FixedUpdate() {
-       if(!isHurt)
+       if(!isHurt && !isAttack)
         Move();
         
     }
@@ -138,5 +143,9 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
+    private void CheckState()
+    {
+        coll.sharedMaterial = physicsCheck.isGround ? normal : wall;
+    }
 
 }
