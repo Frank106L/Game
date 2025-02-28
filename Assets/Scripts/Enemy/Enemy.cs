@@ -1,18 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
-
+using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
     Rigidbody2D rb;
-    protected Animator anim;
-    PhysicsCheck physicsCheck;
+    [HideInInspector] public Animator anim;
+    [HideInInspector] public PhysicsCheck physicsCheck;
     [Header("基本参数")]
     public float normalSpeed;
     public float chassSpeed;
 
-    public float currentSpeed;
+    [HideInInspector] public float currentSpeed;
     public Vector3 faceDir;
     public float hurtForce;
     public Transform attacker;
@@ -24,7 +24,10 @@ public class Enemy : MonoBehaviour
     [Header("状态")]
     public bool isHurt;
     public bool isDead;
-    private void Awake()
+    private BaseState currentState;
+    protected BaseState patrolState;
+    protected BaseState chaseState;
+    protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
@@ -32,22 +35,29 @@ public class Enemy : MonoBehaviour
         currentSpeed = normalSpeed;
         waitTimeCounter = waitTime;
     }
+    private void OnEnable()
+    {
+        currentState = patrolState;
+        currentState.OnEnter(this);
+    }
     private void Update()
     {
         faceDir = new Vector3(-transform.localScale.x, 0, 0);
 
-        if ((physicsCheck.touchLeftWall && faceDir.x < 0) || (physicsCheck.touchRightWall && faceDir.x > 0))
-        {
-            wait = true;
-            anim.SetBool("walk", false);
 
-        }
+
+        currentState.LogicUpdate();
         TimeCounter();
     }
     private void FixedUpdate()
     {
-        if (!isHurt & !isDead)
+        if (!isHurt && !isDead && !wait)
             Move();
+        currentState.PhysicsUpdate();
+    }
+    private void OnDisable()
+    {
+        currentState.OnExit();
     }
     public virtual void Move()
     {
