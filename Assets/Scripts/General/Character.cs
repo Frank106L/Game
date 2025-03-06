@@ -14,17 +14,23 @@ public class Character : MonoBehaviour
     public float invulnerableDuration;
     private float invulnerableCounter;
     public bool invulnerable;
+    public UnityEvent<Character> OnHealthChange;
     public UnityEvent<Transform> OnTakeDamage;
     public UnityEvent OnDie;
 
-    private void Start() {
+    private void Start()
+    {
         currentHealth = maxHealth;
+        OnHealthChange?.Invoke(this);
     }
 
-    private void Update() {
-        if(invulnerable){
+    private void Update()
+    {
+        if (invulnerable)
+        {
             invulnerableCounter -= Time.deltaTime; //减去计时器；
-            if(invulnerableCounter <= 0 ){
+            if (invulnerableCounter <= 0)
+            {
                 invulnerable = false;
             }
         }
@@ -32,23 +38,25 @@ public class Character : MonoBehaviour
 
     private void TriggerInvulnerable()
     {
-        if(!invulnerable)
+        if (!invulnerable)
         {
             invulnerable = true;
             invulnerableCounter = invulnerableDuration;
         }
     }
-    public void TakeDamage(Attack attacker){
-        if(invulnerable)
-           return;
-        if(currentHealth - attacker.damage > 0)
-        {  
+    public void TakeDamage(Attack attacker)
+    {
+        if (invulnerable)
+            return;
+        if (currentHealth - attacker.damage > 0)
+        {
             currentHealth -= attacker.damage;
-            TriggerInvulnerable();
+
             // 触发受伤
             OnTakeDamage?.Invoke(attacker.transform);
+            TriggerInvulnerable();
 
-         
+
         }
         else
         {
@@ -57,6 +65,7 @@ public class Character : MonoBehaviour
             OnDie.Invoke();
 
         }
-        
+        OnHealthChange?.Invoke(this);
+
     }
 }
