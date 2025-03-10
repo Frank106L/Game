@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
     public PlayerInputControl inputControl;
     private PhysicsCheck physicsCheck;
     private PlayerAnimation playerAnimation;
+    private Character character;
     public Vector2 inputDirection;
     private Rigidbody2D rb;
     private CapsuleCollider2D coll;
@@ -23,6 +24,10 @@ public class PlayerController : MonoBehaviour
     private float runSpeed;
     private float walkSpeed => speed / 2.5f;
     public float jumpForce;
+    public float wallJumpForce;
+    public float slideDistance;
+    public float slideSpeed;
+    public int slidePowerCost;
 
     private Vector2 originalOffset;
     private Vector2 OriginalSize;
@@ -36,6 +41,8 @@ public class PlayerController : MonoBehaviour
     public bool isHurt;
     public bool isDead;
     public bool isAttack;
+    public bool wallJump;
+    public bool isSlide;
     private void Awake()
     {
 
@@ -43,7 +50,7 @@ public class PlayerController : MonoBehaviour
         physicsCheck = GetComponent<PhysicsCheck>();
         coll = GetComponent<CapsuleCollider2D>();
         playerAnimation = GetComponent<PlayerAnimation>();
-
+        character = GetComponent<Character>();
         originalOffset = coll.offset;
         OriginalSize = coll.size;
         inputControl = new PlayerInputControl();
@@ -64,6 +71,8 @@ public class PlayerController : MonoBehaviour
         #endregion
         //攻击
         inputControl.Gameplay.Attack.started += PlayerAttack;
+        //滑铲
+        inputControl.Gameplay.Slide.started += Slide;
     }
 
 
@@ -95,7 +104,7 @@ public class PlayerController : MonoBehaviour
     public void Move()
     {
         //人物移动
-        if (!isCrouch)
+        if (!isCrouch && !wallJump)
             rb.velocity = new Vector2(inputDirection.x * speed * Time.deltaTime, rb.velocity.y);
 
         int faceDir = (int)transform.localScale.x;
@@ -125,7 +134,17 @@ public class PlayerController : MonoBehaviour
     private void Jump(InputAction.CallbackContext context)
     {
         if (physicsCheck.isGround)
+        {
             rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
+            //打断滑铲协程
+            isSlide = false;
+            StopAllCoroutines();
+        }
+        else if (physicsCheck.onWall)
+        {
+            rb.AddForce(new Vector2(-inputDirection.x, 2.5f) * wallJumpForce, ForceMode2D.Impulse);
+            wallJump = true;
+        }
     }
     private void PlayerAttack(InputAction.CallbackContext context)
     {
@@ -135,8 +154,39 @@ public class PlayerController : MonoBehaviour
             isAttack = true;
         }
     }
+    private void Slide(InputAction.CallbackContext context)
+    {
+        if (!isSlide && physicsCheck.isGround && character.currentPower >= slidePowerCost)
+        {
+            isSlide = true;
+            var targetPos = new Vector3(transform.position.x + slideDistance * transform.localScale.x, transform.position.y);
+            gameObject.layer = LayerMask.NameToLayer("Enemy");
 
+            StartCoroutine(TriggerSlide(targetPos));
+            character.OnSlide(slidePowerCost);
+        }
 
+    }
+
+    private IEnumerator TriggerSlide(Vector3 target)
+    {
+        do
+        {
+            yield return null;
+            if (!physicsCheck.isGround)
+                break;
+            //滑铲中撞墙
+            if (physicsCheck.touchLeftWall && transform.localScale.x < 0f || physicsCheck.touchRightWall && transform.localScale.x > 0f)
+            {
+                isSlide = false;
+                break;
+            }
+            rb.MovePosition(new Vector2(transform.position.x + transform.localScale.x * slideSpeed, transform.position.y));
+        }
+        while (MathF.Abs(target.x - transform.position.x) > 0.1f);
+        isSlide = false;
+        gameObject.layer = LayerMask.NameToLayer("Player");
+    }
     #region UnityEvent    
     public void GetHurt(Transform attacker)
     {
@@ -157,6 +207,16 @@ public class PlayerController : MonoBehaviour
     private void CheckState()
     {
         coll.sharedMaterial = physicsCheck.isGround ? normal : wall;
+        if (physicsCheck.onWall)
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y / 2f);
+        else
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
+
+        if (wallJump && rb.velocity.y < 0f)
+        {
+            wallJump = false;
+        }
+
     }
 
 }

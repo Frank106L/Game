@@ -10,31 +10,38 @@ public class PlayerAnimation : MonoBehaviour
    private Rigidbody2D rb;
    private PhysicsCheck physicsCheck;
    private PlayerController playerController;
-   private void Awake() {
-    anim = GetComponent<Animator>();
-    rb = GetComponent<Rigidbody2D>();
-    physicsCheck = GetComponent<PhysicsCheck>();
-    playerController = GetComponent<PlayerController>();
+   private void Awake()
+   {
+      anim = GetComponent<Animator>();
+      rb = GetComponent<Rigidbody2D>();
+      physicsCheck = GetComponent<PhysicsCheck>();
+      playerController = GetComponent<PlayerController>();
    }
 
-   private void Update() {
-       setAnimation();//一直执行的动画，受伤是一次性的
-    
-   }
-   public void setAnimation(){
+   private void Update()
+   {
+      setAnimation();//一直执行的动画，受伤是一次性的
 
-    anim.SetFloat("velocityX",MathF.Abs(rb.velocity.x));
-    anim.SetFloat("velocityY",rb.velocity.y);
-    anim.SetBool("isGround",physicsCheck.isGround);
-    anim.SetBool("isCrouch",playerController.isCrouch);
-    anim.SetBool("isDead",playerController.isDead);
-    anim.SetBool("isAttack",playerController.isAttack);
+   }
+   public void setAnimation()
+   {
+
+      anim.SetFloat("velocityX", MathF.Abs(rb.velocity.x));
+      anim.SetFloat("velocityY", rb.velocity.y);
+      anim.SetBool("isGround", physicsCheck.isGround);
+      anim.SetBool("isCrouch", playerController.isCrouch);
+      anim.SetBool("isDead", playerController.isDead);
+      anim.SetBool("isAttack", playerController.isAttack);
+      anim.SetBool("onWall", physicsCheck.onWall);
+      anim.SetBool("isSlide", playerController.isSlide);
    }
 
-   public void PlayHurt(){
+   public void PlayHurt()
+   {
       anim.SetTrigger("hurt");
    }
-   public void PlayerAttack(){
+   public void PlayerAttack()
+   {
       anim.SetTrigger("attack");
    }
 
