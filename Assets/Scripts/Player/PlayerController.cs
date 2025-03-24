@@ -15,6 +15,7 @@ public class PlayerController : MonoBehaviour
     public Vector2 inputDirection;
     private Rigidbody2D rb;
     private CapsuleCollider2D coll;
+    private AudioDefination audioDefination;
 
 
 
@@ -51,9 +52,11 @@ public class PlayerController : MonoBehaviour
         coll = GetComponent<CapsuleCollider2D>();
         playerAnimation = GetComponent<PlayerAnimation>();
         character = GetComponent<Character>();
+        audioDefination = GetComponent<AudioDefination>();
         originalOffset = coll.offset;
         OriginalSize = coll.size;
         inputControl = new PlayerInputControl();
+        //跳跃
         inputControl.Gameplay.Jump.started += Jump;
         #region 强制走路
         runSpeed = speed;
@@ -133,17 +136,20 @@ public class PlayerController : MonoBehaviour
     }
     private void Jump(InputAction.CallbackContext context)
     {
+
         if (physicsCheck.isGround)
         {
             rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
             //打断滑铲协程
             isSlide = false;
             StopAllCoroutines();
+            audioDefination.PlayAudioClip();
         }
         else if (physicsCheck.onWall)
         {
             rb.AddForce(new Vector2(-inputDirection.x, 2.5f) * wallJumpForce, ForceMode2D.Impulse);
             wallJump = true;
+            audioDefination.PlayAudioClip();
         }
     }
     private void PlayerAttack(InputAction.CallbackContext context)

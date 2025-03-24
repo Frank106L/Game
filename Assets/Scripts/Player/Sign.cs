@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class Sign : MonoBehaviour
     private Animator anim;
     public Transform playerTrans;
     public GameObject signSprite;
+    private IInteractable targetItem;
     private bool canPress;
 
     private void Awake()
@@ -24,7 +26,11 @@ public class Sign : MonoBehaviour
     private void OnEnable()
     {
         InputSystem.onActionChange += OnActionChange;
+        playerInput.Gameplay.Confirm.started += OnConfirm;
     }
+
+
+
     private void OnDisable()
     {
         InputSystem.onActionChange -= OnActionChange; // 取消订阅
@@ -39,12 +45,20 @@ public class Sign : MonoBehaviour
     }
 
 
+    private void OnConfirm(InputAction.CallbackContext context)
+    {
+        if (canPress)
+        {
+            targetItem.TriggerAction();
+            GetComponent<AudioDefination>()?.PlayAudioClip();
+        }
+    }
     private void OnActionChange(object obj, InputActionChange actionChange)
     {
         if (actionChange == InputActionChange.ActionStarted)
         {
             var d = (((InputAction)obj).activeControl.device);
-            Debug.Log(d.device);
+            // Debug.Log(d.device);
             switch (d.device)
             {
                 case Keyboard:
@@ -53,9 +67,6 @@ public class Sign : MonoBehaviour
                 case XInputController:
                     anim.Play("xbox");
                     break;
-
-
-
             }
         }
     }
@@ -64,6 +75,7 @@ public class Sign : MonoBehaviour
         if (other.CompareTag("Interactable"))
         {
             canPress = true;
+            targetItem = other.GetComponent<IInteractable>();
         }
     }
     private void OnTriggerExit2D(Collider2D other)
